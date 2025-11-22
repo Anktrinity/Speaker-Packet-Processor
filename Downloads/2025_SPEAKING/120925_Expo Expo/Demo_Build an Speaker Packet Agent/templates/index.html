@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎤 Speaker Packet Processor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #4a90e2, #357abd);
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .method {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .method:hover {
+            border-color: #4a90e2;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(74, 144, 226, 0.1);
+        }
+
+        .method h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus, input[type="file"]:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #4a90e2, #357abd);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(74, 144, 226, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .results.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .results.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .speaker-list {
+            margin: 15px 0;
+        }
+
+        .speaker-item {
+            background: rgba(255,255,255,0.7);
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+
+        .download-section {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .download-link {
+            display: inline-block;
+            background: #2196f3;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .download-link:hover {
+            background: #1976d2;
+        }
+
+        .file-hint {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4a90e2;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .output-files {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+        }
+
+        .file-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4a90e2;
+        }
+
+        .social-posts {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            display: none;
+        }
+
+        .post-section {
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #1da1f2;
+        }
+
+        .post-type {
+            font-weight: bold;
+            color: #1da1f2;
+            margin-bottom: 10px;
+        }
+
+        .post-content {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            margin-bottom: 15px;
+        }
+
+        .copy-btn {
+            background: #1da1f2;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: #1991db;
+        }
+
+        .copy-btn.copied {
+            background: #28a745;
+        }
+
+        .generate-posts-btn {
+            background: linear-gradient(45deg, #1da1f2, #0d8bd9);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 0;
+        }
+
+        .generate-posts-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(29, 161, 242, 0.3);
+        }
+
+        .speaker-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .speaker-tab {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            margin-right: 5px;
+            transition: background 0.3s ease;
+        }
+
+        .speaker-tab.active {
+            background: #4a90e2;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 Speaker Packet Processor</h1>
+            <p>Transform messy speaker content into professional, standardized formats</p>
+        </div>
+
+        <div class="content">
+            <!-- Method 1: Directory Path -->
+            <div class="method">
+                <h3>📁 Process from Local Directory</h3>
+                <p style="margin-bottom: 20px; color: #666;">Enter the full path to a directory containing speaker packet files (speaker_packet_*.txt, .docx, .pdf, .csv)</p>
+
+                <form id="directoryForm">
+                    <div class="form-group">
+                        <label for="directoryPath">Directory Path:</label>
+                        <input type="text" id="directoryPath" name="directoryPath"
+                               placeholder="/Users/yourname/Documents/speaker-packets"
+                               value="/Users/treefanevents/Downloads/2025_SPEAKING/120925_Expo Expo/Demo_Build an Speaker Packet Agent">
+                        <div class="file-hint">Example: /Users/yourname/Documents/speaker-packets</div>
+                    </div>
+                    <button type="submit" class="btn" id="processBtn">Process Directory</button>
+                </form>
+            </div>
+
+            <!-- Method 2: File Upload -->
+            <div class="method">
+                <h3>📤 Upload Speaker Packet Files</h3>
+                <p style="margin-bottom: 20px; color: #666;">Upload one or more speaker packet files directly</p>
+
+                <form id="uploadForm">
+                    <div class="form-group">
+                        <label for="files">Select Files:</label>
+                        <input type="file" id="files" name="files" multiple accept=".txt,.docx,.pdf,.csv">
+                        <div class="file-hint">Select files (.txt, .docx, .pdf, .csv) named like "speaker_packet_john_doe.*"</div>
+                    </div>
+                    <button type="submit" class="btn" id="uploadBtn">Upload & Process</button>
+                </form>
+            </div>
+
+            <!-- Loading indicator -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing speaker packets...</p>
+            </div>
+
+            <!-- Results area -->
+            <div class="results" id="results"></div>
+
+            <!-- LinkedIn Posts Section -->
+            <div class="social-posts" id="socialPosts">
+                <h3>📱 LinkedIn Social Media Posts</h3>
+                <p style="color: #666; margin-bottom: 20px;">Generated social media content for your speakers</p>
+                <div id="socialPostsContent"></div>
+            </div>
+
+            <!-- Output files section -->
+            <div class="output-files">
+                <h3>📊 Generated Files</h3>
+                <p style="color: #666; margin-bottom: 20px;">Previously processed speaker packet files</p>
+                <div id="outputFiles"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load existing output files on page load
+        loadOutputFiles();
+
+        // Directory form handler
+        document.getElementById('directoryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            processDirectory();
+        });
+
+        // Upload form handler
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            uploadFiles();
+        });
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('uploadBtn').disabled = true;
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('processBtn').disabled = false;
+            document.getElementById('uploadBtn').disabled = false;
+        }
+
+        function showResults(data, isError = false) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.className = `results ${isError ? 'error' : 'success'}`;
+            resultsDiv.style.display = 'block';
+
+            if (isError) {
+                resultsDiv.innerHTML = `
+                    <h4>❌ Error</h4>
+                    <p>${data.error || data}</p>
+                `;
+            } else {
+                let speakersHtml = '';
+                if (data.speakers && data.speakers.length > 0) {
+                    speakersHtml = `
+                        <div class="speaker-list">
+                            <strong>Processed Speakers:</strong>
+                            ${data.speakers.map(name => `<div class="speaker-item">✅ ${name}</div>`).join('')}
+                        </div>
+                    `;
+                }
+
+                let downloadHtml = '';
+                if (data.download_url) {
+                    downloadHtml = `
+                        <div class="download-section">
+                            <strong>📊 Excel File Ready!</strong>
+                            <br>File: <code>${data.output_file}</code>
+                            <br><a href="${data.download_url}" class="download-link" download>📥 Download Excel File</a>
+                            <br><button class="generate-posts-btn" onclick="generateLinkedInPosts(${JSON.stringify(data.results).replace(/"/g, '&quot;')})">
+                                📱 Generate LinkedIn Posts
+                            </button>
+                        </div>
+                    `;
+                }
+
+                resultsDiv.innerHTML = `
+                    <h4>✅ Success!</h4>
+                    <p>${data.message}</p>
+                    ${speakersHtml}
+                    ${downloadHtml}
+                `;
+
+                // Refresh output files list
+                loadOutputFiles();
+            }
+        }
+
+        function processDirectory() {
+            const directoryPath = document.getElementById('directoryPath').value.trim();
+
+            if (!directoryPath) {
+                showResults('Please enter a directory path', true);
+                return;
+            }
+
+            showLoading();
+
+            fetch('/process_directory', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `directory_path=${encodeURIComponent(directoryPath)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.error) {
+                    showResults(data, true);
+                } else {
+                    showResults(data, false);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showResults(`Network error: ${error.message}`, true);
+            });
+        }
+
+        function uploadFiles() {
+            const fileInput = document.getElementById('files');
+            const files = fileInput.files;
+
+            if (files.length === 0) {
+                showResults('Please select at least one file', true);
+                return;
+            }
+
+            showLoading();
+
+            const formData = new FormData();
+            for (let file of files) {
+                formData.append('files', file);
+            }
+
+            fetch('/upload_files', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.error) {
+                    showResults(data, true);
+                } else {
+                    showResults(data, false);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showResults(`Upload error: ${error.message}`, true);
+            });
+        }
+
+        function loadOutputFiles() {
+            fetch('/list_outputs')
+            .then(response => response.json())
+            .then(files => {
+                const outputDiv = document.getElementById('outputFiles');
+
+                if (files.length === 0) {
+                    outputDiv.innerHTML = '<p style="color: #666; font-style: italic;">No files generated yet</p>';
+                    return;
+                }
+
+                outputDiv.innerHTML = files.map(file => `
+                    <div class="file-item">
+                        <strong>${file.name}</strong>
+                        <br>Created: ${file.created} | Size: ${(file.size / 1024).toFixed(1)} KB
+                        <br><a href="${file.download_url}" class="download-link" download style="margin-top: 10px; display: inline-block;">📥 Download</a>
+                    </div>
+                `).join('');
+            })
+            .catch(error => {
+                console.error('Error loading output files:', error);
+            });
+        }
+
+        function generateLinkedInPosts(speakerData) {
+            showLoading();
+
+            fetch('/generate_linkedin_posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ speakers: speakerData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.error) {
+                    showResults(data, true);
+                } else {
+                    showLinkedInPosts(data.social_posts);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showResults(`Error generating posts: ${error.message}`, true);
+            });
+        }
+
+        function showLinkedInPosts(socialPosts) {
+            const socialDiv = document.getElementById('socialPosts');
+            const contentDiv = document.getElementById('socialPostsContent');
+
+            // Create speaker tabs if multiple speakers
+            let tabsHtml = '';
+            let contentHtml = '';
+
+            if (socialPosts.length > 1) {
+                tabsHtml = `
+                    <div class="speaker-tabs">
+                        ${socialPosts.map((speaker, index) => `
+                            <button class="speaker-tab ${index === 0 ? 'active' : ''}"
+                                    onclick="showSpeakerPosts(${index})"
+                                    id="tab-${index}">
+                                ${speaker.speaker_name}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            socialPosts.forEach((speaker, speakerIndex) => {
+                const speakerContent = `
+                    <div class="speaker-posts" id="speaker-${speakerIndex}"
+                         style="${speakerIndex === 0 ? 'display: block;' : 'display: none;'}">
+                        <h4>${speaker.speaker_name}</h4>
+                        ${speaker.posts.map((post, postIndex) => `
+                            <div class="post-section">
+                                <div class="post-type">${post.type}</div>
+                                <div class="post-content" id="post-${speakerIndex}-${postIndex}">${post.content}</div>
+                                <button class="copy-btn" onclick="copyToClipboard('post-${speakerIndex}-${postIndex}', this)">
+                                    📋 Copy Post
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                contentHtml += speakerContent;
+            });
+
+            contentDiv.innerHTML = tabsHtml + contentHtml;
+            socialDiv.style.display = 'block';
+
+            // Scroll to social posts
+            socialDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showSpeakerPosts(speakerIndex) {
+            // Hide all speaker posts
+            document.querySelectorAll('.speaker-posts').forEach(div => {
+                div.style.display = 'none';
+            });
+
+            // Remove active class from all tabs
+            document.querySelectorAll('.speaker-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected speaker posts
+            document.getElementById(`speaker-${speakerIndex}`).style.display = 'block';
+            document.getElementById(`tab-${speakerIndex}`).classList.add('active');
+        }
+
+        function copyToClipboard(elementId, button) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+
+            navigator.clipboard.writeText(text).then(function() {
+                button.textContent = '✅ Copied!';
+                button.classList.add('copied');
+
+                setTimeout(function() {
+                    button.textContent = '📋 Copy Post';
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Could not copy text: ', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+
+                button.textContent = '✅ Copied!';
+                button.classList.add('copied');
+
+                setTimeout(function() {
+                    button.textContent = '📋 Copy Post';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
