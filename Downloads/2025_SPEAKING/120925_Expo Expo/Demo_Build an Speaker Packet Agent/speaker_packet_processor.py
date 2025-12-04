@@ -16,7 +16,7 @@ import pdfplumber
 import PyPDF2
 
 class SpeakerPacketProcessor:
-    def __init__(self):
+    def __init__(self, event_theme: str = "", event_tracks: List[str] = None):
         self.banned_words = [
             'synergy', 'synergies', 'thought leader', 'guru', 'rockstar', 'ninja',
             'disrupt', 'disrupting', 'disruptive', 'leverage', 'game-changing',
@@ -26,6 +26,10 @@ class SpeakerPacketProcessor:
             'think outside the box', 'deep dive', 'unpack', 'circle back',
             'move the needle'
         ]
+
+        # Event configuration for evaluation
+        self.event_theme = event_theme
+        self.event_tracks = event_tracks or []
 
     def clean_buzzwords(self, text: str) -> str:
         """Remove banned buzzwords from text."""
@@ -571,6 +575,270 @@ Link in bio 👆
 
         return posts
 
+    def evaluate_session(self, speaker_data: Dict) -> Dict:
+        """
+        Evaluate a session submission on 6 criteria using 1-5 scale.
+        Returns evaluation scores and recommendation.
+        """
+        bio = speaker_data.get('bio', '') or speaker_data.get('100-word Bio', '')
+        session_title = speaker_data.get('session_title', '') or speaker_data.get('Session Title', '')
+        session_description = speaker_data.get('session_description', '') or speaker_data.get('Session Abstract', '')
+
+        # Initialize scores (1-5 scale, equal weights)
+        scores = {}
+
+        # 1. Relevance to Event Theme (1-5)
+        relevance_score = self._score_relevance(session_title, session_description)
+        scores['Relevance to Theme'] = relevance_score
+
+        # 2. Track Alignment (1-5)
+        alignment_score = self._score_track_alignment(session_title, session_description)
+        scores['Track Alignment'] = alignment_score
+
+        # 3. Speaker Credibility (1-5)
+        credibility_score = self._score_credibility(bio)
+        scores['Speaker Credibility'] = credibility_score
+
+        # 4. Presentation Quality (1-5)
+        presentation_score = self._score_presentation(session_description, speaker_data)
+        scores['Presentation Quality'] = presentation_score
+
+        # 5. Audience Engagement Potential (1-5)
+        engagement_score = self._score_engagement(session_title, session_description)
+        scores['Audience Engagement'] = engagement_score
+
+        # 6. Innovation Factor (1-5)
+        innovation_score = self._score_innovation(session_title, session_description)
+        scores['Innovation Factor'] = innovation_score
+
+        # Calculate total score (out of 30, equal weights)
+        total_score = sum(scores.values())
+
+        # Get recommendation
+        recommendation = self._get_recommendation(total_score)
+
+        # Compile evaluation results
+        evaluation = {
+            'scores': scores,
+            'total_score': total_score,
+            'max_score': 30,
+            'percentage': round((total_score / 30) * 100, 1),
+            'recommendation': recommendation['decision'],
+            'recommendation_reason': recommendation['reason'],
+            'strengths': self._identify_strengths(scores),
+            'improvements': self._identify_improvements(scores)
+        }
+
+        return evaluation
+
+    def _score_relevance(self, title: str, description: str) -> int:
+        """Score relevance to event theme (1-5)."""
+        if not self.event_theme:
+            return 3  # Default moderate score if no theme set
+
+        content = (title + " " + description).lower()
+        theme_lower = self.event_theme.lower()
+
+        # Check for exact theme matches
+        if theme_lower in content:
+            return 5
+
+        # Check for related keywords
+        theme_keywords = theme_lower.split()
+        matches = sum(1 for keyword in theme_keywords if keyword in content)
+
+        if matches >= len(theme_keywords) * 0.7:  # 70%+ keywords match
+            return 4
+        elif matches >= len(theme_keywords) * 0.4:  # 40-69% match
+            return 3
+        elif matches > 0:  # Some match
+            return 2
+        else:
+            return 1  # No clear relevance
+
+    def _score_track_alignment(self, title: str, description: str) -> int:
+        """Score alignment with event tracks (1-5)."""
+        if not self.event_tracks:
+            return 3  # Default if no tracks defined
+
+        content = (title + " " + description).lower()
+
+        # Check for exact track matches
+        for track in self.event_tracks:
+            if track.lower() in content:
+                return 5
+
+        # Check for related keywords from tracks
+        track_keywords = set()
+        for track in self.event_tracks:
+            track_keywords.update(track.lower().split())
+
+        matches = sum(1 for keyword in track_keywords if keyword in content)
+
+        if matches >= 3:
+            return 4
+        elif matches == 2:
+            return 3
+        elif matches == 1:
+            return 2
+        else:
+            return 1
+
+    def _score_credibility(self, bio: str) -> int:
+        """Score speaker credibility based on qualifications (1-5)."""
+        if not bio or len(bio.strip()) < 20:
+            return 1
+
+        credibility_indicators = {
+            5: ['phd', 'professor', 'founder', 'ceo', 'author', 'published', 'award-winning'],
+            4: ['director', 'vp', 'senior', 'expert', 'consultant', 'years experience', 'certified'],
+            3: ['manager', 'specialist', 'professional', 'experienced'],
+            2: ['coordinator', 'associate', 'assistant'],
+        }
+
+        bio_lower = bio.lower()
+
+        # Check for highest level indicators first
+        for score in [5, 4, 3, 2]:
+            for indicator in credibility_indicators[score]:
+                if indicator in bio_lower:
+                    return score
+
+        # Default score if bio exists but no clear indicators
+        return 2
+
+    def _score_presentation(self, description: str, speaker_data: Dict) -> int:
+        """Score presentation quality and structure (1-5)."""
+        if not description or len(description.strip()) < 30:
+            return 1
+
+        score = 3  # Start with baseline
+
+        # Check for clear learning outcomes
+        if any(phrase in description.lower() for phrase in ["you'll learn", "you will learn", "attendees will", "participants will"]):
+            score += 1
+
+        # Check for specificity and detail
+        word_count = len(description.split())
+        if word_count >= 75:
+            score += 1
+
+        # Check for takeaways
+        if speaker_data.get('Key Takeaway 1'):
+            score = min(score + 1, 5)
+
+        return min(score, 5)
+
+    def _score_engagement(self, title: str, description: str) -> int:
+        """Score likelihood to draw interest and participation (1-5)."""
+        content = (title + " " + description).lower()
+
+        engagement_keywords = {
+            'high': ['interactive', 'hands-on', 'workshop', 'demo', 'live', 'participate', 'engagement'],
+            'medium': ['practical', 'actionable', 'learn', 'discover', 'explore', 'case study'],
+            'low': ['overview', 'introduction', 'basics', 'fundamentals']
+        }
+
+        # Check for high engagement indicators
+        high_matches = sum(1 for keyword in engagement_keywords['high'] if keyword in content)
+        if high_matches >= 2:
+            return 5
+        elif high_matches == 1:
+            return 4
+
+        # Check for medium engagement indicators
+        medium_matches = sum(1 for keyword in engagement_keywords['medium'] if keyword in content)
+        if medium_matches >= 3:
+            return 4
+        elif medium_matches >= 2:
+            return 3
+        elif medium_matches == 1:
+            return 2
+
+        # Check for low engagement indicators
+        low_matches = sum(1 for keyword in engagement_keywords['low'] if keyword in content)
+        if low_matches > 0:
+            return 2
+
+        return 3  # Default moderate score
+
+    def _score_innovation(self, title: str, description: str) -> int:
+        """Score freshness, innovation, and unique perspective (1-5)."""
+        content = (title + " " + description).lower()
+
+        innovation_keywords = {
+            'high': ['future', 'emerging', 'breakthrough', 'revolutionary', 'pioneering', 'cutting-edge', 'novel'],
+            'medium': ['new', 'modern', 'contemporary', 'recent', 'latest', 'advanced'],
+            'traditional': ['traditional', 'classic', 'established', 'conventional']
+        }
+
+        high_matches = sum(1 for keyword in innovation_keywords['high'] if keyword in content)
+        medium_matches = sum(1 for keyword in innovation_keywords['medium'] if keyword in content)
+        traditional_matches = sum(1 for keyword in innovation_keywords['traditional'] if keyword in content)
+
+        if high_matches >= 2:
+            return 5
+        elif high_matches >= 1:
+            return 4
+        elif medium_matches >= 2:
+            return 3
+        elif traditional_matches > 0:
+            return 2
+        else:
+            return 3  # Default moderate
+
+    def _get_recommendation(self, total_score: int) -> Dict:
+        """Get Accept/Maybe/Reject recommendation based on total score."""
+        if total_score >= 24:  # 80%+ (24-30 points)
+            return {
+                'decision': 'Accept',
+                'reason': 'Excellent session that strongly meets all evaluation criteria.'
+            }
+        elif total_score >= 18:  # 60-79% (18-23 points)
+            return {
+                'decision': 'Maybe',
+                'reason': 'Good session with potential. Consider requesting minor improvements or clarifications.'
+            }
+        else:  # <60% (6-17 points)
+            return {
+                'decision': 'Reject',
+                'reason': 'Session does not meet minimum standards. Significant improvements needed.'
+            }
+
+    def _identify_strengths(self, scores: Dict) -> List[str]:
+        """Identify strong areas (scores of 4-5)."""
+        strengths = []
+        for criterion, score in scores.items():
+            if score >= 4:
+                strengths.append(criterion)
+        return strengths
+
+    def _identify_improvements(self, scores: Dict) -> List[str]:
+        """Identify areas needing improvement (scores of 1-2)."""
+        improvements = []
+        for criterion, score in scores.items():
+            if score <= 2:
+                improvements.append(criterion)
+        return improvements
+
+    def rank_submissions(self, evaluations: List[Dict]) -> List[Dict]:
+        """
+        Rank all submissions by total score for comparative analysis.
+        Returns sorted list with rankings.
+        """
+        # Add ranking information
+        sorted_evals = sorted(evaluations, key=lambda x: x.get('evaluation', {}).get('total_score', 0), reverse=True)
+
+        for rank, eval_data in enumerate(sorted_evals, 1):
+            eval_data['rank'] = rank
+
+        return sorted_evals
+
+    def set_event_configuration(self, theme: str, tracks: List[str]):
+        """Set event theme and tracks for evaluation."""
+        self.event_theme = theme
+        self.event_tracks = tracks
+
     def process_speaker(self, file_path: str) -> Dict:
         """Process a single speaker packet file."""
         data = self.parse_speaker_file(file_path)
@@ -617,7 +885,8 @@ Link in bio 👆
             if 'tech_requirements' in suggestions:
                 suggestions_text += f"Suggested Tech: {'; '.join(suggestions['tech_requirements'][:2])} | "
 
-        return {
+        # Create base result
+        result = {
             'Speaker Name': data['name'],
             '50-word Bio': bio_formats['50_word'],
             '100-word Bio': bio_formats['100_word'],
@@ -633,6 +902,30 @@ Link in bio 👆
             'AI Suggestions': suggestions_text.rstrip(' | ') if suggestions_text else "None",
             'Generated Content': suggestions  # Store full suggestions for web interface
         }
+
+        # Add evaluation if event theme/tracks are configured
+        if self.event_theme or self.event_tracks:
+            evaluation = self.evaluate_session({
+                'bio': bio_formats['100_word'],
+                'session_title': data['session_title'],
+                'session_description': session_content['abstract'],
+                'Key Takeaway 1': session_content['takeaways'][0]
+            })
+
+            # Add evaluation columns
+            result['Eval: Relevance'] = evaluation['scores']['Relevance to Theme']
+            result['Eval: Track Alignment'] = evaluation['scores']['Track Alignment']
+            result['Eval: Credibility'] = evaluation['scores']['Speaker Credibility']
+            result['Eval: Presentation'] = evaluation['scores']['Presentation Quality']
+            result['Eval: Engagement'] = evaluation['scores']['Audience Engagement']
+            result['Eval: Innovation'] = evaluation['scores']['Innovation Factor']
+            result['Eval: Total Score'] = f"{evaluation['total_score']}/30 ({evaluation['percentage']}%)"
+            result['Eval: Recommendation'] = evaluation['recommendation']
+            result['Eval: Strengths'] = ', '.join(evaluation['strengths']) if evaluation['strengths'] else 'None identified'
+            result['Eval: Improvements'] = ', '.join(evaluation['improvements']) if evaluation['improvements'] else 'None needed'
+            result['evaluation'] = evaluation  # Store full evaluation for web interface
+
+        return result
 
     def process_directory(self, directory_path: str = ".") -> List[Dict]:
         """Process all speaker packet files in a directory."""
@@ -679,10 +972,10 @@ Link in bio 👆
         if output_file == "processed_speakers.xlsx":  # Default filename
             output_file = f"outputs/{filename_base}_{timestamp}.xlsx"
 
-        # Remove Generated Content from Excel export (keep for web interface)
+        # Remove Generated Content and evaluation from Excel export (keep for web interface)
         export_results = []
         for result in results:
-            export_result = {k: v for k, v in result.items() if k != 'Generated Content'}
+            export_result = {k: v for k, v in result.items() if k not in ['Generated Content', 'evaluation']}
             export_results.append(export_result)
 
         df = pd.DataFrame(export_results)

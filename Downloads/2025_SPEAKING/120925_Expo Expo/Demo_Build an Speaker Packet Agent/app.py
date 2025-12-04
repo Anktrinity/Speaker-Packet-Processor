@@ -25,10 +25,47 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 processor = SpeakerPacketProcessor()
 
+# Store event configuration in session
+event_config = {
+    'theme': '',
+    'tracks': []
+}
+
 @app.route('/')
 def index():
     """Main page with directory input and file upload options."""
     return render_template('index.html')
+
+@app.route('/set_event_config', methods=['POST'])
+def set_event_config():
+    """Set event theme and tracks for evaluation."""
+    try:
+        data = request.get_json()
+        theme = data.get('theme', '').strip()
+        tracks = [t.strip() for t in data.get('tracks', []) if t.strip()]
+
+        # Update processor configuration
+        processor.set_event_configuration(theme, tracks)
+
+        # Store in module-level config
+        event_config['theme'] = theme
+        event_config['tracks'] = tracks
+
+        return jsonify({
+            'success': True,
+            'message': f'Event configuration updated: Theme="{theme}", Tracks={len(tracks)}'
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'Configuration error: {str(e)}'}), 500
+
+@app.route('/get_event_config', methods=['GET'])
+def get_event_config():
+    """Get current event configuration."""
+    return jsonify({
+        'theme': event_config['theme'],
+        'tracks': event_config['tracks']
+    })
 
 @app.route('/process_directory', methods=['POST'])
 def process_directory():

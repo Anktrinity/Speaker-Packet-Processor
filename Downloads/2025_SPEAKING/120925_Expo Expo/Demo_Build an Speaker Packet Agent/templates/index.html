@@ -305,16 +305,111 @@
             background: #4a90e2;
             color: white;
         }
+
+        .evaluation-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-radius: 10px;
+            border: 2px solid #667eea;
+        }
+
+        .evaluation-header {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .evaluation-scores {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .score-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .score-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .score-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .recommendation {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .recommendation.accept {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .recommendation.maybe {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffc107;
+        }
+
+        .recommendation.reject {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+
+        .stars {
+            color: #ffc107;
+            font-size: 1.2rem;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎤 Speaker Packet Processor</h1>
-            <p>Transform messy speaker content into professional, standardized formats</p>
+            <h1>🎤 Speaker Packet Processor & Evaluator</h1>
+            <p>Transform messy speaker content into professional, standardized formats + Evaluate & score session submissions</p>
         </div>
 
         <div class="content">
+            <!-- Event Configuration for Evaluation -->
+            <div class="method" style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); border-color: #667eea;">
+                <h3>🎯 Event Configuration (Optional - For Session Evaluation)</h3>
+                <p style="margin-bottom: 20px; color: #666;">Configure your event theme and tracks to enable automatic session evaluation and scoring</p>
+
+                <form id="eventConfigForm">
+                    <div class="form-group">
+                        <label for="eventTheme">Event Theme:</label>
+                        <input type="text" id="eventTheme" name="eventTheme"
+                               placeholder="e.g., AI, Automation and Innovation for Event Professionals">
+                        <div class="file-hint">The main theme or focus of your event</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="eventTracks">Event Tracks (comma-separated):</label>
+                        <input type="text" id="eventTracks" name="eventTracks"
+                               placeholder="e.g., Artificial Intelligence, Event Technology, Audience Engagement">
+                        <div class="file-hint">Separate multiple tracks with commas</div>
+                    </div>
+                    <button type="submit" class="btn" id="configBtn" style="background: linear-gradient(45deg, #667eea, #764ba2);">Set Event Configuration</button>
+                </form>
+                <div id="configStatus" style="margin-top: 10px; padding: 10px; border-radius: 5px; display: none;"></div>
+            </div>
+
             <!-- Method 1: Directory Path -->
             <div class="method">
                 <h3>📁 Process from Local Directory</h3>
@@ -391,6 +486,53 @@
             uploadFiles();
         });
 
+        // Event configuration form handler
+        document.getElementById('eventConfigForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            setEventConfiguration();
+        });
+
+        function setEventConfiguration() {
+            const theme = document.getElementById('eventTheme').value.trim();
+            const tracksInput = document.getElementById('eventTracks').value.trim();
+            const tracks = tracksInput ? tracksInput.split(',').map(t => t.trim()).filter(t => t) : [];
+
+            fetch('/set_event_config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    theme: theme,
+                    tracks: tracks
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('configStatus');
+                statusDiv.style.display = 'block';
+
+                if (data.success) {
+                    statusDiv.style.background = '#d4edda';
+                    statusDiv.style.color = '#155724';
+                    statusDiv.style.border = '1px solid #c3e6cb';
+                    statusDiv.innerHTML = `✅ ${data.message}<br><small>Session evaluation will now be included in your exports</small>`;
+                } else {
+                    statusDiv.style.background = '#f8d7da';
+                    statusDiv.style.color = '#721c24';
+                    statusDiv.style.border = '1px solid #f5c6cb';
+                    statusDiv.innerHTML = `❌ Error: ${data.error}`;
+                }
+            })
+            .catch(error => {
+                const statusDiv = document.getElementById('configStatus');
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = '#f8d7da';
+                statusDiv.style.color = '#721c24';
+                statusDiv.innerHTML = `❌ Error setting configuration: ${error}`;
+            });
+        }
+
         function showLoading() {
             document.getElementById('loading').style.display = 'block';
             document.getElementById('results').style.display = 'none';
@@ -425,6 +567,44 @@
                     `;
                 }
 
+                // Check if evaluation data exists
+                let evaluationHtml = '';
+                if (data.results && data.results.length > 0) {
+                    const hasEvaluation = data.results.some(r => r.evaluation);
+                    if (hasEvaluation) {
+                        evaluationHtml = '<div class="evaluation-section"><div class="evaluation-header">🎯 Session Evaluation Scores</div>';
+                        data.results.forEach(speaker => {
+                            if (speaker.evaluation) {
+                                const eval = speaker.evaluation;
+                                const recommendClass = eval.recommendation.toLowerCase();
+                                const stars = (score) => '★'.repeat(score) + '☆'.repeat(5 - score);
+
+                                evaluationHtml += `
+                                    <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 8px;">
+                                        <h4 style="color: #333; margin-bottom: 10px;">${speaker['Speaker Name']}</h4>
+                                        <div class="evaluation-scores">
+                                            ${Object.entries(eval.scores).map(([criterion, score]) => `
+                                                <div class="score-item">
+                                                    <div class="score-label">${criterion}</div>
+                                                    <div class="score-value">${score}/5 <span class="stars">${stars(score)}</span></div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                        <div style="margin-top: 15px;">
+                                            <strong>Total Score:</strong> ${eval.total_score}/${eval.max_score} (${eval.percentage}%)
+                                            <br><span class="recommendation ${recommendClass}">📋 ${eval.recommendation}</span>
+                                            <br><small style="color: #666;">${eval.recommendation_reason}</small>
+                                        </div>
+                                        ${eval.strengths.length > 0 ? `<div style="margin-top: 10px;"><strong>✅ Strengths:</strong> ${eval.strengths.join(', ')}</div>` : ''}
+                                        ${eval.improvements.length > 0 ? `<div style="margin-top: 5px;"><strong>⚠️ Needs Improvement:</strong> ${eval.improvements.join(', ')}</div>` : ''}
+                                    </div>
+                                `;
+                            }
+                        });
+                        evaluationHtml += '</div>';
+                    }
+                }
+
                 let downloadHtml = '';
                 if (data.download_url) {
                     // Store download info globally
@@ -450,6 +630,7 @@
                     <h4>✅ Success!</h4>
                     <p>${data.message}</p>
                     ${speakersHtml}
+                    ${evaluationHtml}
                     ${downloadHtml}
                 `;
 

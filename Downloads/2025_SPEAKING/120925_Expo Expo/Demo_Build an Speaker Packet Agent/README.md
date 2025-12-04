@@ -1,15 +1,23 @@
-# 🎤 Speaker Packet Processor v2.1
+# 🎤 Speaker Packet Processor & Session Evaluator v3.0
 
-**Transform messy speaker content into professional, standardized formats with AI-powered automation.**
+**Transform messy speaker content into professional, standardized formats with AI-powered automation. Evaluate and score session submissions based on defined criteria to select the best speakers for your event.**
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-2.0+-green.svg)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Demo](https://img.shields.io/badge/Demo-Live-success.svg)](http://localhost:5000)
 
-## ✨ What's New in v2.1
+## ✨ What's New in v3.0
 
-### 🧠 **Intelligent Content Generation**
+### 🎯 **Session Evaluation System** (NEW!)
+- **6-Criteria Scoring**: Evaluate sessions on relevance, alignment, credibility, presentation, engagement, and innovation
+- **1-5 Rating Scale**: Simple, clear scoring for each evaluation criterion
+- **Smart Recommendations**: Automatic Accept/Maybe/Reject decisions based on total scores
+- **Comparative Ranking**: Rank all submissions to identify top speakers
+- **Event Configuration**: Set global event theme and tracks for consistent evaluation
+- **Detailed Scoring Reports**: Export evaluation results with breakdowns for each criterion
+
+### 🧠 **Intelligent Content Generation** (v2.1)
 - **Smart placeholder detection**: Automatically identifies "TBD", "[working title]", "something cool"
 - **Contextual title generation**: Creates professional session titles based on speaker expertise
 - **Domain-specific intelligence**: Specialized knowledge for AI, cybersecurity, customer experience, leadership
@@ -28,6 +36,22 @@
 - **Improved error handling**: User-friendly validation and guidance
 
 ## 🚀 Core Features
+
+### 🎯 **Session Evaluation & Scoring** (NEW!)
+- **Comprehensive Evaluation**: Score sessions on 6 key criteria
+  - **Relevance to Event Theme** (1-5): How well the session matches your event's focus
+  - **Track Alignment** (1-5): Fit with event's programmatic tracks or goals
+  - **Speaker Credibility** (1-5): Qualifications, experience, and past feedback
+  - **Presentation Quality** (1-5): Session design, structure, and delivery potential
+  - **Audience Engagement** (1-5): Likelihood to draw interest and participation
+  - **Innovation Factor** (1-5): Freshness, uniqueness, and novel perspectives
+
+- **Smart Decision Support**:
+  - **Accept** (24-30 points): Excellent sessions that strongly meet all criteria
+  - **Maybe** (18-23 points): Good sessions that need minor improvements
+  - **Reject** (6-17 points): Sessions that don't meet minimum standards
+
+- **Comparative Analytics**: Rank all submissions to identify your best speakers
 
 ### 📁 **Multi-Format File Processing**
 - **Text files** (.txt) - Standard speaker packet format
