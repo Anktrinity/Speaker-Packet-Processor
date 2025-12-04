@@ -1,13 +1,13 @@
-# 🎤 Speaker Packet Processor - Product Requirements Document (PRD)
+# 🎤 Speaker Packet Processor & Session Evaluator - Product Requirements Document (PRD)
 
-**Version:** 2.1
-**Date:** November 2024
-**Status:** Implemented & Enhanced
-**Last Updated:** November 22, 2024
+**Version:** 3.0
+**Date:** December 2024
+**Status:** Implemented & Enhanced with Evaluation System
+**Last Updated:** December 4, 2024
 
 ## 📋 Executive Summary
 
-The Speaker Packet Processor is an AI-powered automation tool that transforms messy, inconsistent speaker content into professional, standardized formats ready for event management systems and social media campaigns. The system processes multiple file formats and generates both structured data exports and engaging social media content.
+The Speaker Packet Processor & Session Evaluator is an AI-powered automation tool that transforms messy, inconsistent speaker content into professional, standardized formats ready for event management systems and social media campaigns. **NEW in v3.0:** The system now includes a comprehensive session evaluation engine that scores submissions on 6 criteria, provides Accept/Maybe/Reject recommendations, and ranks speakers comparatively. The system processes multiple file formats and generates both structured data exports and engaging social media content.
 
 ## 🎯 Problem Statement
 
@@ -31,14 +31,17 @@ Event professionals face significant challenges when processing speaker content:
 
 ## 🚀 Solution Overview
 
-An automated speaker content processing system with web interface that:
+An automated speaker content processing and evaluation system with web interface that:
 
 1. **Ingests Multiple File Formats** (.txt, .docx, .pdf, .csv)
 2. **Standardizes Content** using AI-powered text processing
-3. **Generates Multiple Output Formats** for different use cases
-4. **Creates Social Media Content** with one-click generation
-5. **Provides Quality Control** with automated checking
-6. **Exports to Excel** for platform integration
+3. **Evaluates & Scores Sessions** on 6 criteria (NEW v3.0)
+4. **Provides Smart Recommendations** (Accept/Maybe/Reject) (NEW v3.0)
+5. **Ranks Submissions Comparatively** (NEW v3.0)
+6. **Generates Multiple Output Formats** for different use cases
+7. **Creates Social Media Content** with one-click generation
+8. **Provides Quality Control** with automated checking
+9. **Exports to Excel** with evaluation scores for platform integration
 
 ## ✨ Core Features
 
@@ -104,6 +107,76 @@ An automated speaker content processing system with web interface that:
 - ✅ Professional tone maintenance
 - ✅ Intelligent replacement of placeholder titles with contextually relevant options
 - ✅ Generation of alternative session titles for speaker choice
+
+### 🎯 Session Evaluation System (NEW v3.0)
+
+**Requirement**: Evaluate and score session submissions on multiple criteria to assist with speaker selection decisions.
+
+**Core Functionality**:
+
+**6 Evaluation Criteria** (1-5 scale, equal weights):
+
+1. **Relevance to Event Theme** (1-5)
+   - Analyzes session title and description against configured event theme
+   - Keyword matching and semantic relevance
+   - Scoring: 5=Perfect match, 4=Strong alignment, 3=Moderate, 2=Weak, 1=Poor
+
+2. **Track Alignment** (1-5)
+   - Evaluates fit with event's programmatic tracks
+   - Multi-track support with keyword detection
+   - Scoring: 5=Exact track match, 4=Strong fit, 3=Moderate, 2=Partial, 1=No match
+
+3. **Speaker Credibility** (1-5)
+   - Assesses qualifications, experience, credentials
+   - Detection of: PhD, Professor, Founder, CEO, Director, VP, Expert, etc.
+   - Scoring: 5=Top credentials, 4=Senior level, 3=Mid-level, 2=Junior, 1=Insufficient
+
+4. **Presentation Quality** (1-5)
+   - Evaluates session structure and learning outcomes
+   - Checks for clear objectives, adequate detail, takeaways
+   - Scoring: 5=Excellent structure, 4=Good, 3=Adequate, 2=Basic, 1=Poor
+
+5. **Audience Engagement Potential** (1-5)
+   - Assesses likelihood to draw interest and participation
+   - Detection of: interactive, hands-on, workshop, practical, actionable
+   - Scoring: 5=Highly engaging, 4=Very engaging, 3=Moderate, 2=Low, 1=Very low
+
+6. **Innovation Factor** (1-5)
+   - Evaluates freshness, uniqueness, novel perspectives
+   - Detection of: emerging, breakthrough, future, new, modern
+   - Scoring: 5=Highly innovative, 4=Very innovative, 3=Moderate, 2=Traditional, 1=Conventional
+
+**Smart Recommendations**:
+- **Accept** (24-30 points / 80%+): Excellent sessions strongly meeting all criteria
+- **Maybe** (18-23 points / 60-79%): Good sessions with potential, minor improvements needed
+- **Reject** (6-17 points / <60%): Sessions not meeting minimum standards
+
+**Comparative Ranking**:
+- Automatic sorting by total score
+- Rank assignment (1st, 2nd, 3rd, etc.)
+- Easy identification of top speakers
+
+**Event Configuration**:
+- Global theme setting (applies to all evaluations)
+- Multiple tracks support (comma-separated)
+- Configurable via web UI or API
+- Persistent throughout session
+
+**Implementation Details**:
+- Equal weight scoring (each criterion = 16.67% of total)
+- Intelligent keyword matching with contextual analysis
+- Automatic strength/weakness identification
+- Export results to Excel with full breakdown
+
+**Acceptance Criteria**:
+- ✅ All 6 criteria accurately evaluate session quality
+- ✅ Scoring is consistent and reproducible
+- ✅ Recommendations align with score ranges
+- ✅ Ranking correctly sorts by total score
+- ✅ Event configuration persists across requests
+- ✅ Evaluation results export to Excel
+- ✅ Web UI displays scores with visual indicators
+- ✅ Test script validates all functionality
 
 ### 🧹 Buzzword Detection & Cleaning
 
@@ -418,9 +491,10 @@ Process → Review Quality → Copy Posts → Access Files Anytime
 2. **Text Extraction** - Format-specific content extraction
 3. **Content Analysis** - Pattern recognition and parsing
 4. **Standardization** - Format conversion and cleaning
-5. **Quality Control** - Automated checking and flagging
-6. **Export Generation** - Excel file creation
-7. **Social Content** - LinkedIn post generation
+5. **Session Evaluation** - 6-criteria scoring (NEW v3.0)
+6. **Quality Control** - Automated checking and flagging
+7. **Export Generation** - Excel file creation with evaluation scores
+8. **Social Content** - LinkedIn post generation
 
 ### Performance Requirements
 
@@ -485,13 +559,21 @@ Process → Review Quality → Copy Posts → Access Files Anytime
 - Enhanced UI/UX
 - Copy-paste functionality
 
-### Phase 3: Integration & Scaling (Future)
+### Phase 3: Session Evaluation System ✅ (v3.0)
+- 6-criteria evaluation engine
+- Accept/Maybe/Reject recommendations
+- Comparative ranking system
+- Event configuration (theme & tracks)
+- Excel export with evaluation scores
+- Web UI with visual score display
+
+### Phase 4: Integration & Scaling (Future)
 - Event platform API integrations
 - Bulk processing optimization
 - Advanced analytics dashboard
 - Team collaboration features
 
-### Phase 4: AI Enhancement (Future)
+### Phase 5: AI Enhancement (Future)
 - Machine learning content improvement
 - Custom style adaptation
 - Automated A/B testing for social posts
